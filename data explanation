@@ -1,0 +1,17 @@
+Data file is BathSoap.xls. 
+The data in the Table 1 below profiles each household each row contains the
+data for one household.
+
+Though not used in this analysis project, two additional datasets were used in the derivation of the summary
+data.
+
+
+"CRISAPurchaseData" is a transaction database in which each row is a transaction. Multiple rows in
+this dataset corresponding to a single household were consolidated into a single row of household data
+in "CRISASummaryData".
+
+The Durables sheet in the data file contains information used to calculate the affluence index. Each
+row corresponds to a household, and each column represents a durable consumer good. A 1 in a column
+indicates that the durable is possessed by the household; a 0 indicates that it is not possessed. This
+value is multiplied by the weight assigned to the durable item. The sum of all the weighted values of
+the durables possessed gives the affulence index.
