@@ -1,0 +1,198 @@
+#importing data
+library(xlsx) # need rjava and xlsxjars packages also
+workbook<-"C:/Users/karen/Downloads/UIC/ids572/HW6/HW5Q3/BathSoap_Data.xls"
+codelist<-read.xlsx(workbook,1) # for reference only
+
+#read data from 3 different worksheet: codelist, durables,DM_sheet
+DM_sheet<-read.xlsx(workbook,2,header = TRUE)
+DM_sheet<-DM_sheet[1:600,1:46]
+
+#formatting the sheet first
+durables<-read.xlsx(workbook,3,header = TRUE)
+durables<-durables[c(-1,-2),]
+col_name<- as.character(as.matrix(durables[1,]))  #as.matrix vs data frame
+names(durables)<-col_name
+names(durables)[2]<-"Affluence index"
+durables<-durables[-1,-71]
+
+
+
+#explore the data 
+str(DM_sheet)
+str(durables)
+#Durable data file
+head(durables,6)
+
+
+#add columns for extra variables from the existing
+
+DM_sheet$newcolumn<-NA
+names(DM_sheet)[47]<-'Max to one brand'
+as.matrix(DM_sheet)
+#max to one brand
+DM_sheet$`Max to one brand`<-apply(DM_sheet[,max_purchase],1,max)
+
+#600 obs. in DM_sheet with 47 variables
+
+#share to other brands = other99
+
+#Q1a)
+BrandGroup<-DM_sheet[,c(12:16,19,31,47)] #make MemberID as row names
+rownames(BrandGroup)<-DM_sheet[,1]
+
+#normalize the data frist by z-score
+
+BrandGroup.norm<-as.data.frame(lapply(BrandGroup,scale))
+
+#now try different number of clusters to split
+
+#k = 2
+library(stats)
+set.seed(1234)
+brand_clusters<-kmeans(BrandGroup.norm,2,nstart = 10)
+brand_clusters$centers
+brand_clusters$size
+brand_clusters$withinss
+summary(brand_clusters)
+
+#get the centroid from original scale
+aggregate(BrandGroup,by=list(cluster=brand_clusters$cluster),mean)
+
+#plot result
+plot(BrandGroup,col=(brand_clusters$cluster + 1),main = 'K-means result with 2 clusters',
+     pch=20,cex=2)
+
+
+#k=3
+set.seed(1234)
+brand_clusters.3<-kmeans(BrandGroup.norm,3,nstart = 10)
+brand_clusters.3$centers
+brand_clusters.3$size
+brand_clusters.3$withinss
+summary(brand_clusters.3)
+brand_clusters.3
+aggregate(BrandGroup,by=list(cluster=brand_clusters.3$cluster),mean)
+
+
+
+#k=5
+set.seed(1234)
+brand_clusters.5<-kmeans(BrandGroup.norm,5,nstart = 10)
+brand_clusters.5$centers
+brand_clusters.5$size
+brand_clusters.5$withinss
+summary(brand_clusters.5)
+brand_clusters.5
+
+aggregate(BrandGroup,by=list(cluster=brand_clusters.5$cluster),mean)
+
+rbind(mean(brand_clusters$withinss),mean(brand_clusters.3$withinss)
+            ,mean(brand_clusters.5$withinss))
+
+
+#b) base to purchase
+
+purchase_group<-DM_sheet[,c(20:22,32:46)] # contains all selling proposition
+#memberID as row names
+rownames(purchase_group)<-DM_sheet[,1]
+#explore selling proposition 
+plot(~DM_sheet$PropCat.5,DM_sheet)
+plot(~DM_sheet$PropCat.6,DM_sheet)
+plot(~DM_sheet$PropCat.8,DM_sheet)
+plot(~DM_sheet$PropCat.9,DM_sheet)
+plot(~DM_sheet$PropCat.10,DM_sheet)
+plot(~DM_sheet$PropCat.11,DM_sheet)
+plot(~DM_sheet$PropCat.12,DM_sheet)
+plot(~DM_sheet$PropCat.13,DM_sheet)
+plot(~DM_sheet$PropCat.14,DM_sheet)
+plot(~DM_sheet$PropCat.15,DM_sheet)
+
+pairs(purchase_group$PropCat.5~PropCat.6 + PropCat.7 +PropCat.8 + 
+        PropCat.9 + PropCat.10 + PropCat.11 + PropCat.12 + PropCat.13 +
+        PropCat.14 + PropCat.15
+      ,data = purchase_group)
+
+
+#promotion behavior
+pairs(purchase_group$Pur.Vol.No.Promo....~purchase_group$Pur.Vol.Promo.6..+
+        purchase_group$Pur.Vol.Other.Promo..,data = purchase_group)
+
+#price category 
+
+pairs(purchase_group$Pr.Cat.1~Pr.Cat.2 + Pr.Cat.3 +Pr.Cat.4,
+      data = purchase_group)
+
+
+
+
+#include all selling-proposition
+#k = 2,3,5
+purchaseBasis.2<-kmeans(purchase_group,2,nstart = 10)
+purchaseBasis.3<-kmeans(purchase_group,3,nstart = 10)
+purchaseBasis.5<-kmeans(purchase_group,5,nstart = 10)
+
+purchaseBasis.2$centers
+purchaseBasis.3$centers
+purchaseBasis.5$centers
+
+purchaseBasis.2$size
+purchaseBasis.3$size
+purchaseBasis.5$size
+
+purchaseBasis.2$withinss
+mean(purchaseBasis.2$withinss)
+purchaseBasis.3$withinss
+mean(purchaseBasis.3$withinss)
+
+purchaseBasis.5$withinss
+mean(purchaseBasis.5$withinss)
+#avg within-cluster distance for 3 models
+rbind(mean(purchaseBasis.2$withinss),mean(purchaseBasis.3$withinss)
+        ,mean(purchaseBasis.5$withinss))
+
+#purchase_basis
+sellingProp<-DM_sheet[,36:46]
+plot(sellingProp$PropCat.5~.,data = sellingProp)
+plot(sellingProp$PropCat.6~.,data = sellingProp)
+plot(sellingProp$PropCat.7~.,data = sellingProp)
+plot(sellingProp$PropCat.8~.,data = sellingProp)
+plot(sellingProp$PropCat.9~.,data = sellingProp)
+plot(sellingProp$PropCat.10~.,data = sellingProp)
+plot(sellingProp$PropCat.11~.,data = sellingProp)
+plot(sellingProp$PropCat.12~.,data = sellingProp)
+plot(sellingProp$PropCat.13~.,data = sellingProp)
+plot(sellingProp$PropCat.14~.,data = sellingProp)
+plot(sellingProp$PropCat.15~.,data = sellingProp)
+#brand offer and brand loyalty in terms of brand run, number of brands
+
+loyalty<-DM_sheet[,c(12,13,20,21)]
+
+
+
+plot(loyalty$Pur.Vol.Promo.6..~.,data = loyalty)
+
+
+#c)
+#combine two dataset
+
+purchase.behavior<-cbind(BrandGroup,purchase_group)
+
+#normalize the data first
+purchBehavi.norm<-as.data.frame(lapply(purchase.behavior,scale))
+
+#for all these variables, build models for k = 2,3.5 
+pB.2<-kmeans(purchBehavi.norm,2,nstart =10)
+pB.3<-kmeans(purchBehavi.norm,3,nstart =10)
+pB.5<-kmeans(purchBehavi.norm,5,nstart =10)
+
+
+aggregate(purchase.behavior,by=list(cluster=pB.2$cluster),mean)
+aggregate(purchase.behavior,by=list(cluster=pB.3$cluster),mean)
+aggregate(purchase.behavior,by=list(cluster=pB.5$cluster),mean)
+#size of clusters for each model
+pB.2$size
+pB.3$size
+pB.5$size
+
+#avg within-cluster distance for 3 models
+rbind(mean(pB.2$withinss),mean(pB.3$withinss),mean(pB.5$withinss))
